@@ -1,7 +1,58 @@
-mandatory: true
-question: |
-  Hello, ${ name }.
+objects:
+  - user: Individual
+  - cohabs: DAList.using(object_type=Individual)
 ---
+generic object: Individual
 question: What is your name?
-fields: 
-  - Name: name
+fields:
+  - First Name: x.name.first
+  - Second Name: x.name.last
+---
+question: Do you like coding?
+yesno: user.likes_coding
+---
+question: What are things Donald Trump has done you do not agree with?
+fields:
+  - Russian Puppet: user.russian
+    datatype: yesnowide
+  - Minimizing White Supremacy: user.whitesupremacy
+    datatype: yesnowide
+  - Ignoring COVID Deaths: user.covid
+    datatype: yesnowide
+  - All the Lies: user.lies
+    datatype: yesnowide
+---
+question: Who is your favourite former US president?
+field: user.favourite_pres
+choices:
+  - Barack Obama
+  - George W. Bush
+  - Other
+---
+question: Do you live with anyone?
+yesno: cohabs.there_are_any
+---
+question: Do you live with anyone else?
+yesno: cohabs.there_is_another
+---
+question: Please sign
+signature: user.signature
+---
+mandatory: true
+question: Hi, ${ user }.
+subquestion: |
+  Do you like coding? ${ user.likes_coding }
+  
+  Do you disagree with Trump regarding Russia? ${ user.russian }
+  
+  Do you disagree with Trump regarding White Supremacy? ${ user.whitesupremacy }
+  
+  Do you disagree with Trump regarding COVID? ${ user.covid }
+  
+  Do you disagree with Trump regarding All the Lies? ${ user.lies }
+  
+  Your favourite US president? ${ user.favourite_pres }
+  
+  Your signature? ${ user.signature }
+  
+  The people who live with you are: ${ cohabs }
