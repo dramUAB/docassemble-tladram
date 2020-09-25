@@ -1,58 +1,67 @@
 objects:
   - user: Individual
-  - cohabs: DAList.using(object_type=Individual)
+  - Family: DAList
+---
+mandatory: True
+question:  |
+attachments:
+  - name: Legal Aid Help
+    filename: legalaid
+    content: |
+      # 
+      Hello, ${ user }.
+      This is your Legal Aid Help.
+      
+      You qualify for Legal Aid:
+      
+      ${ poor_aid }
+      % if poor_aid:
+      Congratulations, you have qualified for Legal Aid!
+      
+      % else:
+      Unfortunately, you do not qualify for legal aid.
+      
+      % endif
+      
+      % if len(Family) > 0:
+      You stated that you live with: ${ Family }.
+      
+      % for r in Family:
+      
+      ${ r } sounds like they may also qualify for Legal Aid.
+      
+      % endfor
+      
+      I'm a particularly big fan of ${ Family[0] }.
+      
+      % else:
+      You are a lonely human, so we will try our best to help you. I suggest buying a pet!
+      % endif
+      
+      You told me you were born on ${ format_date(birthday, format='EEEE, MMMM d, yyyy') }, which can also be written as ${ format_date(birthday, format="yyy-MM-dd") }
+     
 ---
 generic object: Individual
-question: What is your name?
+question:  |
+  What is ${ x.object_possessive('name') }??
 fields:
   - First Name: x.name.first
-  - Second Name: x.name.last
+  - Last Name: x.name.last
 ---
-question: Do you like coding?
-yesno: user.likes_coding
+question: Do you qualify for legal aid?
+yesno: poor_aid
 ---
-question: What are things Donald Trump has done you do not agree with?
-fields:
-  - Russian Puppet: user.russian
-    datatype: yesnowide
-  - Minimizing White Supremacy: user.whitesupremacy
-    datatype: yesnowide
-  - Ignoring COVID Deaths: user.covid
-    datatype: yesnowide
-  - All the Lies: user.lies
-    datatype: yesnowide
----
-question: Who is your favourite former US president?
-field: user.favourite_pres
-choices:
-  - Barack Obama
-  - George W. Bush
-  - Other
----
-question: Do you live with anyone?
-yesno: cohabs.there_are_any
+question: Do you live with any family?
+yesno: Family.there_are_any
 ---
 question: Do you live with anyone else?
-yesno: cohabs.there_is_another
+yesno: Family.there_is_another
 ---
-question: Please sign
-signature: user.signature
+question: What is their name?
+fields:
+  - Family member name: Family[i]
 ---
-mandatory: true
-question: Hi, ${ user }.
-subquestion: |
-  Do you like coding? ${ user.likes_coding }
-  
-  Do you disagree with Trump regarding Russia? ${ user.russian }
-  
-  Do you disagree with Trump regarding White Supremacy? ${ user.whitesupremacy }
-  
-  Do you disagree with Trump regarding COVID? ${ user.covid }
-  
-  Do you disagree with Trump regarding All the Lies? ${ user.lies }
-  
-  Your favourite US president? ${ user.favourite_pres }
-  
-  Your signature? ${ user.signature }
-  
-  The people who live with you are: ${ cohabs }
+question: What is your birthday?
+fields:
+  - Birthday: birthday
+    datatype: date
