@@ -1,9 +1,8 @@
 objects:
   - user: Individual
-  - Family: DAList
 ---
 mandatory: True
-question:  |
+question:  Results
 attachments:
   - name: Legal Aid Help
     filename: legalaid
@@ -12,56 +11,128 @@ attachments:
       Hello, ${ user }.
       This is your Legal Aid Help.
       
-      You qualify for Legal Aid:
+      Based on the information you have entered:
       
-      ${ poor_aid }
-      % if poor_aid:
+      ${ qualified_aid }
+      % if qualified_aid:
       Congratulations, you have qualified for Legal Aid!
+      
+      % if appeal_prior_help:
+      You recieved prior help, so you will recieve it again for the appeal.
+      % else:
+      You did not recieve prior help from us.
+      
+      % if afford_lawyer = False:
+      You cannot afford a lawyer, therefore you are underrepresented.
+      % else:
+      You do not currently have a working lawyer, therefore you are underrepresented.
+      % endif
+      
+      
+      % if lives_alberta
+      You live in Alberta, and the 
+      
+      % if in_alberta
+      matter is in Alberta.
+      % else:
+      matter is not in Alberta.
+      % endif
+      
+      % else:
+      You do not live in Alberta, and the
+      % if in_alberta
+      matter is in Alberta.
+      % else:
+      matter is not in Alberta.
+      % endif
+      
+      % endif
+      
+      % endif
+      
+      Your matter is ${ legal_matter }, which we cover here.
       
       % else:
       Unfortunately, you do not qualify for legal aid.
       
+      % if afford_lawyer
+      You can afford your own lawyer.
+      % else:
+      You cannot afford your own lawyer, but you have one acting for you.
       % endif
       
-      % if len(Family) > 0:
-      You stated that you live with: ${ Family }.
+      % if lives_alberta
+      You live in Alberta, and the 
       
-      % for r in Family:
-      
-      ${ r } sounds like they may also qualify for Legal Aid.
-      
-      % endfor
-      
-      I'm a particularly big fan of ${ Family[0] }.
+      % if in_alberta
+      matter is in Alberta.
+      % else:
+      matter is not in Alberta.
+      % endif
       
       % else:
-      You are a lonely human, so we will try our best to help you. I suggest buying a pet!
+      You do not live in Alberta, and the
+      % if in_alberta
+      matter is in Alberta.
+      % else:
+      matter is not in Alberta.
       % endif
       
-      You told me you were born on ${ format_date(birthday, format='EEEE, MMMM d, yyyy') }, which can also be written as ${ format_date(birthday, format="yyy-MM-dd") }
-     
+      % endif
+      
+      
+      % endif
 ---
 generic object: Individual
-question:  |
-  What is ${ x.object_possessive('name') }??
+question: |
+  What is ${ x.object_possessive('name') }?
 fields:
   - First Name: x.name.first
+    default: ${ x.first_name_hint() }
+  - Middle Name: x.name.middle
+    required: False
   - Last Name: x.name.last
+    default: ${ x.last_name_hint() }
 ---
-question: Do you qualify for legal aid?
-yesno: poor_aid
+question: Do you have a lawyer?
+yesno: has_lawyer
 ---
-question: Do you live with any family?
-yesno: Family.there_are_any
+question: Can you afford a lawyer?
+yesno: afford_lawyer
 ---
-question: Do you live with anyone else?
-yesno: Family.there_is_another
+question: If you have a lawyer, are they still acting for you?
+yesno: lawyer_still_acting
 ---
-question: What is their name?
+question: Is the legal matter located in Alberta?
+yesno: in_alberta
+---
+question: Is the matter criminal or family?
 fields:
-  - Family member name: Family[i]
+  - Matters: legal_matter
+    choices:
+      -Criminal
+      -Family
 ---
-question: What is your birthday?
-fields:
-  - Birthday: birthday
-    datatype: date
+question: Do you live in Alberta?
+yesno: lives_alberta
+---
+question: Is the matter an appeal for which the user received LAA assistance?
+yesno: appeal_prior_help
+---
+code:  |
+  if afford_lawyer or ( has_lawyer and lawyer_still_acting )
+    under_represented = False
+  else:
+    under_represented = True
+---
+code:  |
+  if appeal_prior_help or ( lives_alberta and in_alberta and legal_matter == "Criminal" or legal_matter == "Family" )
+    residency_requirement = True
+  else:
+    residency_requirement = False
+---
+code:  |
+  if under_represented and residency_requirement
+    qualified_aid = True
+  else:
+    qualified_aid = False
