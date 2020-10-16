@@ -1,5 +1,28 @@
-objects:
-  - user: Individual
+mandatory: true
+code: |
+  # Code-flow block
+  
+  # can_afford
+  if not can_afford:
+    has_lawyer
+  
+  if has_lawyer:
+    still_acting
+    
+  # exception_appeal
+  if not exception_appeal:
+    ab_resident
+    
+  if ab_resident:
+    alb_matter
+    
+  if alb_matter
+    family_matter
+    
+  if not family_matter:
+    criminal_matter
+    
+  
 ---
 mandatory: True
 question:  Results
@@ -8,131 +31,89 @@ attachments:
     filename: legalaid
     content: |
       # 
-      Hello, ${ user }.
+      Hello ${ user }.
       This is your Legal Aid Help.
       
       Based on the information you have entered:
       
-      ${ qualified_aid }
-      % if qualified_aid:
-      Congratulations, you have qualified for Legal Aid!
+      % if ( not ( can_afford or has_lawyer or still acting ) ) and ( ( ab_resident ) and ( family_matter or criminal_matter )  or exception_appeal ):
       
-      % if appeal_prior_help:
-      You recieved prior help, so you will recieve it again for the appeal.
-      % else:
-      You did not recieve prior help from us.
-      
-      % if afford_lawyer = False:
-      You cannot afford a lawyer, therefore you are underrepresented.
-      % else:
-      You do not currently have a working lawyer, therefore you are underrepresented.
-      % endif
-      
-      
-      % if lives_alberta
-      You live in Alberta, and the 
-      
-      % if in_alberta
-      matter is in Alberta.
-      % else:
-      matter is not in Alberta.
-      % endif
+      You qualify! Congratulations!
       
       % else:
-      You do not live in Alberta, and the
-      % if in_alberta
-      matter is in Alberta.
-      % else:
-      matter is not in Alberta.
-      % endif
-      
-      % endif
-      
-      % endif
-      
-      Your matter is ${ legal_matter }, which we cover here.
-      
-      % else:
-      Unfortunately, you do not qualify for legal aid.
-      
-      % if afford_lawyer
-      You can afford your own lawyer.
-      % else:
-      You cannot afford your own lawyer, but you have one acting for you.
-      % endif
-      
-      % if lives_alberta
-      You live in Alberta, and the 
-      
-      % if in_alberta
-      matter is in Alberta.
-      % else:
-      matter is not in Alberta.
-      % endif
-      
-      % else:
-      You do not live in Alberta, and the
-      % if in_alberta
-      matter is in Alberta.
-      % else:
-      matter is not in Alberta.
-      % endif
+      You do not qualify. Sorry.
       
       % endif
       
       
+      % if not can_afford:
+      You said you cannot afford a lawyer.
+      % if has_lawyer:
+      You said you have a lawyer.
+      % if still_acting:
+      You said your lawyer is still acting for you.
+      % else:
+      You said your lawyer is not still acting for you.
       % endif
+      % else:
+      You said you do not have a lawyer.
+      % end if
+      % else:
+      You said you can afford a lawyer.
+      % endif
+      
+      % if ( ( not ( can_afford or still acting ) ) and ( ab_resident ):
+      You said you are an Alberta resident.
+      % else:
+      % endif
+      
+      % if ( ( not ( can_afford or still acting ) ) and ( ab_resident ) and alb_matter:
+      You said it was an Alberta matter.
+      % if family_matter:
+      You said your matter was a family matter.
+      % else:
+      % if criminal_matter:
+      You said your matter was a criminal matter.
+      % else:
+      You said your matter was not a criminal or family matter.
+      % endif
+      % endif
+      % else:
+      You said it was not an Alberta matter.
+      
+      
+
+---
+objects:
+  - user: Individual
 ---
 generic object: Individual
-question: |
-  What is ${ x.object_possessive('name') }?
+question:  |
+  What is ${ x.object_possessive('name') }??
 fields:
   - First Name: x.name.first
-    default: ${ x.first_name_hint() }
-  - Middle Name: x.name.middle
-    required: False
   - Last Name: x.name.last
-    default: ${ x.last_name_hint() }
 ---
 question: Do you have a lawyer?
 yesno: has_lawyer
 ---
+question: Is your lawyer still acting for you?
+yesno: still_acting
+---
 question: Can you afford a lawyer?
-yesno: afford_lawyer
+yesno: can_afford
 ---
-question: If you have a lawyer, are they still acting for you?
-yesno: lawyer_still_acting
+question: Are you an Alberta resident?
+yesno: ab_resident
 ---
-question: Is the legal matter located in Alberta?
-yesno: in_alberta
+question: Is the matter in Alberta?
+yesno: alb_matter
 ---
-question: Is the matter criminal or family?
-fields:
-  - Matters: legal_matter
-    choices:
-      -Criminal
-      -Family
+question: Is the matter regarding family law?
+yesno: family_matter
 ---
-question: Do you live in Alberta?
-yesno: lives_alberta
+question: Is the matter regarding criminal law?
+yesno: criminal_matter
 ---
-question: Is the matter an appeal for which the user received LAA assistance?
-yesno: appeal_prior_help
----
-code:  |
-  if afford_lawyer or ( has_lawyer and lawyer_still_acting )
-    under_represented = False
-  else:
-    under_represented = True
----
-code:  |
-  if appeal_prior_help or ( lives_alberta and in_alberta and legal_matter == "Criminal" or legal_matter == "Family" )
-    residency_requirement = True
-  else:
-    residency_requirement = False
----
-code:  |
-  if under_represented and residency_requirement
-    qualified_aid = True
-  else:
-    qualified_aid = False
+question: Is the matter an appeal of a matter which Legal Aid provided assistance?
+yesno: exception_appeal
