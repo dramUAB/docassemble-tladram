@@ -1,7 +1,18 @@
+objects:
+  - user: DAList.using(object_type=Individual)
+  - user.income_year: Value
+  - user.income_30: Value
+  - user.assets: Value
+  - family: DAList.using(object_type=Individual)
+---
 mandatory: true
 code: |
   # Code-flow block
   
+  user
+  
+  user.income_year
+    
   # can_afford
   if not can_afford:
     has_lawyer
@@ -36,7 +47,7 @@ attachments:
       
       Based on the information you have entered:
       
-      % if ( not ( can_afford or has_lawyer or still acting ) ) and ( ( ab_resident ) and ( family_matter or criminal_matter )  or exception_appeal ):
+      % if ( ( under_rep ) and ( prov_ser ) and (fin_qual or marg_qual) ):
       
       You qualify! Congratulations!
       
@@ -45,6 +56,8 @@ attachments:
       
       % endif
       
+      
+      You entered the following information:
       
       % if not can_afford:
       You said you cannot afford a lawyer.
@@ -62,30 +75,52 @@ attachments:
       You said you can afford a lawyer.
       % endif
       
-      % if ( ( not ( can_afford or still acting ) ) and ( ab_resident ):
+      % if ( ( not ( can_afford or still acting ) ) and exception_appeal:
+      You said Legal Aid Alberta helped with the matter previously.
+      % else:
+      % if ( ( not ( can_afford or still acting ) ) and not exception_appeal:
+      You said Legal Aid Alberta did not help with the matter previously.
+      % else:
+      % endif
+      % endif
+      
+      
+      % if ( (( not ( can_afford or still acting ) ) and not exception_appeal) and ab_resident ):
       You said you are an Alberta resident.
       % else:
+      % if ( (( not ( can_afford or still acting ) ) and not exception_appeal) and not ab_resident ):
+      You said you are not an Alberta resident.
+      % else:
+      % endif
       % endif
       
       % if ( ( not ( can_afford or still acting ) ) and ( ab_resident ) and alb_matter:
       You said it was an Alberta matter.
       % if family_matter:
-      You said your matter was a family matter.
+      You said your matter was a family law matter.
       % else:
       % if criminal_matter:
-      You said your matter was a criminal matter.
+      You said your matter was a criminal law matter.
       % else:
-      You said your matter was not a criminal or family matter.
+      You said your matter was not a criminal or family law matter.
       % endif
       % endif
       % else:
       You said it was not an Alberta matter.
+      % endif
       
+      % if fin_qual:
+      You are financially eligible for legal aid based on your income.
+      % else:
+      % if marg_qual:
+      You are marginally financially eligible for legal aid based on your income.
+      % else:
+      You are not financially eligible for legal aid based on your income.
+      % endif
+      % endif
       
+      You said your monthly income is user.income_30.value and that your yearly income is user.income_year.value . You also said your assets are worth user.income_assets.value .
 
----
-objects:
-  - user: Individual
 ---
 generic object: Individual
 question:  |
@@ -115,5 +150,50 @@ yesno: family_matter
 question: Is the matter regarding criminal law?
 yesno: criminal_matter
 ---
-question: Is the matter an appeal of a matter which Legal Aid provided assistance?
+question: Is the matter an appeal of a matter to which Legal Aid provided assistance?
 yesno: exception_appeal
+---
+question:  |
+  What is your income and asset net worth?
+fields:
+  - What is your income in the last 30 days: user.income_30.value
+    datatype: currency
+  - What is your income in the last year: user.income_year.value
+    datatype: currency
+  - What is your asset worth: user.income_assets.value
+    datatype: currency
+---
+question: Do you live with any family?
+yesno: family.there_are_any
+---
+question: Do you live with any other family?
+yesno: family.there_is_another
+---
+question: What is the family member name?
+fields:
+  - family: family[i]
+---
+code:  |
+  if not ( can_afford or still_acting ):
+    under_rep = True
+  else:
+    under_rep = False
+---
+code:  |
+  if ( (( ab_resident ) and ( family_matter or criminal_matter ))  or exception_appeal ):
+    prov_ser = True
+  else:
+    prov_ser = False
+---
+code:  |
+  if ( ( len(family) == 0 and ( user.income_30.value > 1668 or user.income_year.value > 20021 )) or ( len(family) == 1 and ( user.income_30.value > 2066 or user.income_year.value > 24788 )) or ( len(family) == 2 and ( user.income_30.value > 2940 or user.income_year.value > 35275 )) or ( len(family) == 3 and ( user.income_30.value > 3178 or user.income_year.value > 38134 )) or ( len(family) == 4 and ( user.income_30.value > 3416 or user.income_year.value > 40995 )) or ( len(family) < 4 and ( user.income_30.value > 3655 or user.income_year.value > 43855 )) ):
+    fin_qual = True
+  else:
+    fin_qual = False
+---
+code:  |
+  if ( ( len(family) == 0 and ( user.income_30.value > 1835 or user.income_year.value > 22023 )) or ( len(family) == 1 and ( user.income_30.value > 2273 or user.income_year.value > 27267 )) or ( len(family) == 2 and ( user.income_30.value > 3234 or user.income_year.value > 38803 )) or ( len(family) == 3 and ( user.income_30.value > 3496 or user.income_year.value > 41947 )) or ( len(family) == 4 and ( user.income_30.value > 3758 or user.income_year.value > 45095 )) or ( len(family) < 4 and ( user.income_30.value > 4021 or user.income_year.value > 48241 )) ):
+    marg_qual = True
+  else:
+    marg_qual = False
+    
